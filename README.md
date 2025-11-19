@@ -10,6 +10,7 @@ This utility helps educators and group coordinators ensure that students are pai
 
 - Validates proposed group assignments against historical group data
 - Identifies all conflicts where students have previously worked together
+- Detects students from previous groups who are missing from proposed groups
 - Supports flexible JSON input format
 - Provides clear, human-readable output
 - Optional JSON output for programmatic use
@@ -84,9 +85,10 @@ Example:
 
 ### Human-Readable Output (Default)
 
-When no conflicts are found:
+When no conflicts are found and all students are included:
 ```
 ✓ No conflicts found! All proposed groups have novel member combinations.
+✓ All students from previous groups are included in proposed groups.
 ```
 
 When conflicts are found:
@@ -100,6 +102,25 @@ Group 1: ['Alice', 'Bob', 'Henry']
 Group 2: ['Charlie', 'David', 'Frank']
   Conflicts:
     - Charlie and David have previously been in a group together
+
+⚠ Warning: 2 student(s) from previous groups are missing from proposed groups:
+
+  - Jack
+  - Kelly
+
+```
+
+When students are missing but no conflicts:
+```
+⚠ Warning: 6 student(s) from previous groups are missing from proposed groups:
+
+  - Bob
+  - Charlie
+  - David
+  - Eve
+  - Jack
+  - Kelly
+
 ```
 
 ### JSON Output
@@ -120,14 +141,16 @@ Use the `--json` flag to get machine-readable output:
         }
       ]
     }
-  ]
+  ],
+  "missing_students": ["Jack", "Kelly"],
+  "num_missing": 2
 }
 ```
 
 ## Exit Codes
 
-- `0`: No conflicts found
-- `1`: Conflicts found
+- `0`: No conflicts found and all previous students are in proposed groups
+- `1`: Conflicts found or students are missing from proposed groups
 - `2`: Error occurred (invalid input, file not found, etc.)
 
 This makes it easy to use the tool in scripts:
@@ -156,25 +179,31 @@ python3 test_group_check.py -v
 The `examples/` directory contains sample input files:
 
 - `previous_groups.json` - Example of previous group assignments
-- `proposed_groups_no_conflicts.json` - Proposed groups with no conflicts
-- `proposed_groups_with_conflicts.json` - Proposed groups with conflicts
+- `proposed_groups_no_conflicts.json` - Proposed groups with no conflicts and all students included
+- `proposed_groups_with_conflicts.json` - Proposed groups with conflicts and some missing students
+- `proposed_groups_missing_students.json` - Proposed groups with no conflicts but several missing students
 
 Try them out:
 ```bash
-# No conflicts
+# No conflicts, all students included
 python3 group_check.py examples/previous_groups.json examples/proposed_groups_no_conflicts.json
 
-# With conflicts
+# With conflicts and missing students
 python3 group_check.py examples/previous_groups.json examples/proposed_groups_with_conflicts.json
+
+# No conflicts but missing students
+python3 group_check.py examples/previous_groups.json examples/proposed_groups_missing_students.json
 ```
 
 ## How It Works
 
 1. The tool reads all previous group assignments
 2. It builds a set of all student pairs that have previously worked together
-3. For each proposed group, it checks all possible pairs of students
-4. If any pair exists in the previous pairs set, a conflict is reported
-5. All conflicts are reported with details about which students have previously worked together
+3. It tracks all unique students from previous groups
+4. For each proposed group, it checks all possible pairs of students
+5. If any pair exists in the previous pairs set, a conflict is reported
+6. It identifies students from previous groups who don't appear in any proposed group
+7. All conflicts and missing students are reported with details
 
 ## License
 
