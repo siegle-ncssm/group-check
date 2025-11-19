@@ -233,5 +233,105 @@ class TestLoadGroupsFromFile(unittest.TestCase):
             load_groups_from_file(filepath)
 
 
+class TestMissingStudents(unittest.TestCase):
+    """Test cases for finding missing students."""
+
+    def test_no_missing_students(self):
+        """Test when all previous students are in proposed groups."""
+        previous_groups = [
+            ["Alice", "Bob", "Charlie"]
+        ]
+        proposed_groups = [
+            ["Alice", "David"],
+            ["Bob", "Eve"],
+            ["Charlie", "Frank"]
+        ]
+
+        checker = GroupChecker(previous_groups)
+        missing = checker.find_missing_students(proposed_groups)
+
+        self.assertEqual(len(missing), 0)
+
+    def test_some_missing_students(self):
+        """Test when some students are missing."""
+        previous_groups = [
+            ["Alice", "Bob", "Charlie"],
+            ["David", "Eve", "Frank"]
+        ]
+        proposed_groups = [
+            ["Alice", "Grace"],
+            ["David", "Henry"]
+        ]
+
+        checker = GroupChecker(previous_groups)
+        missing = checker.find_missing_students(proposed_groups)
+
+        self.assertEqual(len(missing), 4)
+        self.assertIn("Bob", missing)
+        self.assertIn("Charlie", missing)
+        self.assertIn("Eve", missing)
+        self.assertIn("Frank", missing)
+
+    def test_all_students_missing(self):
+        """Test when all previous students are missing."""
+        previous_groups = [
+            ["Alice", "Bob", "Charlie"]
+        ]
+        proposed_groups = [
+            ["David", "Eve", "Frank"]
+        ]
+
+        checker = GroupChecker(previous_groups)
+        missing = checker.find_missing_students(proposed_groups)
+
+        self.assertEqual(len(missing), 3)
+        self.assertIn("Alice", missing)
+        self.assertIn("Bob", missing)
+        self.assertIn("Charlie", missing)
+
+    def test_missing_students_sorted(self):
+        """Test that missing students are returned sorted."""
+        previous_groups = [
+            ["Zoe", "Alice", "Mike"]
+        ]
+        proposed_groups = [
+            ["David", "Eve"]
+        ]
+
+        checker = GroupChecker(previous_groups)
+        missing = checker.find_missing_students(proposed_groups)
+
+        self.assertEqual(missing, ["Alice", "Mike", "Zoe"])
+
+    def test_empty_proposed_groups_all_missing(self):
+        """Test with empty proposed groups."""
+        previous_groups = [
+            ["Alice", "Bob"]
+        ]
+        proposed_groups = []
+
+        checker = GroupChecker(previous_groups)
+        missing = checker.find_missing_students(proposed_groups)
+
+        self.assertEqual(len(missing), 2)
+
+    def test_case_sensitive_missing(self):
+        """Test that case sensitivity applies to missing students."""
+        previous_groups = [
+            ["Alice", "Bob"]
+        ]
+        proposed_groups = [
+            ["alice", "bob"]  # Different case
+        ]
+
+        checker = GroupChecker(previous_groups)
+        missing = checker.find_missing_students(proposed_groups)
+
+        # Alice and Bob should be missing because alice and bob are different
+        self.assertEqual(len(missing), 2)
+        self.assertIn("Alice", missing)
+        self.assertIn("Bob", missing)
+
+
 if __name__ == '__main__':
     unittest.main()
