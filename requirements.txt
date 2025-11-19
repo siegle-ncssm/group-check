@@ -1,0 +1,3 @@
+# No external dependencies required
+# This utility uses only Python standard library modules
+# Python 3.6+ is required
